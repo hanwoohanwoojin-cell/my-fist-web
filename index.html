@@ -20,11 +20,38 @@
       justify-content: center;
       align-items: center;
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      /* 밝은 회색 그라데이션 */
+      /* 밝은 회색 그라데이션 (이미지 로딩 전 기본 배경) */
       background: linear-gradient(135deg, #f8fafc 0%, #eef2f6 50%, #e2e8f0 100%);
       color: #1e293b;
       padding: 1.5rem;
       overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 부드러운 크로스페이드 배경 이미지 레이어 */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.8s ease-in-out;
+      z-index: -2;
+      transform: scale(1.02);
+    }
+
+    .bg-layer.active {
+      opacity: 1;
+    }
+
+    /* 카드 가독성을 높여주는 은은한 반투명 오버레이 */
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.25);
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* 완성도 높은 모던 미니멀 카드 */
@@ -209,6 +236,10 @@
   </style>
 </head>
 <body>
+  <div class="bg-layer active" id="bg-layer-a"></div>
+  <div class="bg-layer" id="bg-layer-b"></div>
+  <div class="bg-overlay"></div>
+
   <main class="message-card">
     <div class="badge">
       <span class="badge-dot" id="badge-dot"></span>
@@ -231,46 +262,83 @@
   </main>
 
   <script>
-    // 4가지 문장과 각 문장에 어울리는 테마 색상 설정
+    // 4가지 문장과 각 문장에 어울리는 테마 색상 및 배경 이미지 설정
     const themes = [
       {
         message: "오늘도 힘내세요!",
         color: "#2563eb",         // 로열 블루
         shadow: "rgba(37, 99, 235, 0.38)",
-        particleColors: ["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#dbeafe"]
+        particleColors: ["#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#dbeafe"],
+        bgImage: "https://picsum.photos/id/1018/1920/1080"
       },
       {
         message: "당신의 하루를 응원합니다!",
         color: "#059669",         // 싱그러운 에메랄드 그린
         shadow: "rgba(5, 150, 105, 0.38)",
-        particleColors: ["#10b981", "#34d399", "#6ee7b7", "#059669", "#d1fae5"]
+        particleColors: ["#10b981", "#34d399", "#6ee7b7", "#059669", "#d1fae5"],
+        bgImage: "https://picsum.photos/id/10/1920/1080"
       },
       {
         message: "작은 발걸음도 멋진 시작이에요!",
         color: "#ea580c",         // 활기찬 웜 오렌지
         shadow: "rgba(234, 88, 12, 0.38)",
-        particleColors: ["#f97316", "#fb923c", "#fdba74", "#ea580c", "#ffedd5"]
+        particleColors: ["#f97316", "#fb923c", "#fdba74", "#ea580c", "#ffedd5"],
+        bgImage: "https://picsum.photos/id/15/1920/1080"
       },
       {
         message: "오늘도 빛나는 하루가 될 거예요!",
         color: "#7c3aed",         // 화사하고 신비로운 바이올렛
         shadow: "rgba(124, 58, 237, 0.38)",
-        particleColors: ["#8b5cf6", "#a78bfa", "#c4b5fd", "#7c3aed", "#ede9fe"]
+        particleColors: ["#8b5cf6", "#a78bfa", "#c4b5fd", "#7c3aed", "#ede9fe"],
+        bgImage: "https://images.unsplash.com/photo-1572442402590-cf0c3d0d084b?auto=format&fit=crop&w=1920&q=80"
       }
     ];
 
     let currentIndex = 0;
+    let activeBgLayer = 'a';
     const messageEl = document.getElementById('cheer-message');
     const nextBtn = document.getElementById('next-btn');
     const stepIndicator = document.getElementById('step-indicator');
     const badgeDot = document.getElementById('badge-dot');
+    const bgLayerA = document.getElementById('bg-layer-a');
+    const bgLayerB = document.getElementById('bg-layer-b');
 
-    // 초기 테마 스타일 적용
-    function applyTheme(theme) {
+    // 이미지 미리 불러오기 (전환 시 깜빡임 방지)
+    themes.forEach((theme) => {
+      const img = new Image();
+      img.src = theme.bgImage;
+    });
+
+    // 배경 이미지 부드럽게 전환
+    function updateBackground(imageUrl, immediate = false) {
+      if (immediate) {
+        bgLayerA.style.backgroundImage = `url('${imageUrl}')`;
+        bgLayerA.classList.add('active');
+        bgLayerB.classList.remove('active');
+        activeBgLayer = 'a';
+        return;
+      }
+
+      if (activeBgLayer === 'a') {
+        bgLayerB.style.backgroundImage = `url('${imageUrl}')`;
+        bgLayerB.classList.add('active');
+        bgLayerA.classList.remove('active');
+        activeBgLayer = 'b';
+      } else {
+        bgLayerA.style.backgroundImage = `url('${imageUrl}')`;
+        bgLayerA.classList.add('active');
+        bgLayerB.classList.remove('active');
+        activeBgLayer = 'a';
+      }
+    }
+
+    // 테마 스타일 및 배경 이미지 적용
+    function applyTheme(theme, immediateBg = false) {
       nextBtn.style.backgroundColor = theme.color;
       nextBtn.style.boxShadow = `0 8px 22px ${theme.shadow}`;
       badgeDot.style.backgroundColor = theme.color;
       badgeDot.style.boxShadow = `0 0 10px ${theme.color}`;
+      updateBackground(theme.bgImage, immediateBg);
     }
 
     // 클릭 시 터지는 스파클 파티클 효과
@@ -350,7 +418,7 @@
     });
 
     // 시작 시 첫 번째 테마 적용
-    applyTheme(themes[0]);
+    applyTheme(themes[0], true);
   </script>
 </body>
 </html>
